@@ -4,6 +4,14 @@
 #define DNS_PORT 53
 #define MAX_DNS_SIZE 1024
 
+#define GOOGLE_DNS "8.8.8.8"
+
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
@@ -28,6 +36,12 @@ typedef struct dns_packet {
 	u16 arcount;		// number of entries in additional records section
 } dns_packet;
 
+typedef struct sender_packet_map {
+	u16 ti;			// transaction id
+	struct sockaddr_in * sender;
+	u16 len_sender;
+} sender_packet_map;
+
 /*
 	MEMHELPER
 */
@@ -46,5 +60,7 @@ u8 parse_dns(dns_packet * pkt, char * data, u16 len);
 	MAIN
 */
 int get_socket();
-
+void send_query(int fd, u64 * dns_connections, struct sockaddr_in * sender, char * buf, unsigned int rsize, struct sockaddr_in * dnsserver);
+void forward_dns(int fd, sender_packet_map * mapping, char * data, u16 size);
+void get_dns_server(struct sockaddr_in * dns_server);
 #endif // ADDROPPER_HEADER
