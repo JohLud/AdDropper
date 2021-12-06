@@ -15,13 +15,15 @@ int main(int arc, char ** argv) {
 	
 	struct sockaddr_in sender;
 	char * buf = malloc(MAX_DNS_SIZE);
-	unsigned int len_sender = sizeof(sender);
+	dns_packet * pkt = malloc(sizeof(dns_packet));
+	u8 len_sender = sizeof(sender);
 	
 	while(1) {
-
+		printf("receiving ...");
 		unsigned int rsize = recvfrom(fd, buf, 1024, 0, (struct sockaddr *) &sender, &len_sender);
 		if (errno != 0) printf("Error: %s\n", strerror(errno));
 		
+		u8 response = parse_dns(pkt, buf, rsize);
 	}
 	
 	close(fd);
