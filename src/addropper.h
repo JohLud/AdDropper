@@ -60,7 +60,7 @@ u8 parse_dns(dns_packet * pkt, char * data, u16 len);
 	MAIN
 */
 int get_socket();
-void send_query(int fd, u64 * dns_connections, struct sockaddr_in * sender, char * buf, unsigned int rsize, struct sockaddr_in * dnsserver);
+void send_query(int fd, sender_packet_map * dns_connections, struct sockaddr_in * sender, u8 len_sender, char * buf, unsigned int rsize, struct sockaddr_in * dnsserver);
 void forward_dns(int fd, sender_packet_map * mapping, char * data, u16 size);
 void get_dns_server(struct sockaddr_in * dns_server);
 #endif // ADDROPPER_HEADER
