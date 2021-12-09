@@ -59,11 +59,14 @@ u64 get_u64(char * data);
 void parse_dns_flags(u16 flags, dns_packet * pkt);
 u8 parse_dns(dns_packet * pkt, char * data, u16 len);
 void parse_dns_rr(dns_packet * pkt, char * data, u16 pos, u16 len);
+u16 build_zero_answer(char ** data, u16 len);
+void get_type_and_class(char * data, u16 len, u16 * type, u16 * class);
 /*
 	MAIN
 */
 int get_socket();
-void send_query(int fd, sender_packet_map * dns_connections, struct sockaddr_in * sender, u32 len_sender, char * buf, unsigned int rsize, struct sockaddr_in * dnsserver);
-void forward_dns(int fd, sender_packet_map * mapping, char * data, u16 size);
+void send_query(int fd, sender_packet_map * dns_connections, struct sockaddr_in * sender, u32 len_sender, char * buf, unsigned int u32, struct sockaddr_in * dnsserver);
+void forward_dns(int fd, sender_packet_map * mapping, char * data, u32 size);
 void get_dns_server(struct sockaddr_in * dns_server);
+void send_zero_answer(int fd, struct sockaddr_in * sender, u32 len_sender, char * buf, u32 len);
 #endif // ADDROPPER_HEADER

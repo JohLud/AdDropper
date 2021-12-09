@@ -22,7 +22,7 @@ _Bool check_in_file(char * domain, u16 domain_len) {
 char * cut_www(char * domain) {
 	u16 len = strlen(domain);
 	_Bool www = 0;
-	if (strncmp(domain, "w", 1) == 0) {
+	if (strncmp(domain, "www", 3) == 0) {
 		char * newdom = malloc(len - 4);
 		for (int i = 0; i < len - 4; i++) {
 			newdom[i] = domain[i+4];

@@ -1,1 +1,0 @@
-nc 192.168.178.51 5555 < Makefile ;sleep 1; nc 192.168.178.51 5555 < addropper.c;sleep 1; nc 192.168.178.51 5555 < addropper.h;sleep 1; nc 192.168.178.51 5555 < dns.c ;sleep 1; nc 192.168.178.51 5555 < domain_check.c ;sleep 1; nc 192.168.178.51 5555 < memhelper.c ;sleep 1; nc 192.168.178.51 5555 < domain_check.c 

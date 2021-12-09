@@ -1,7 +1,65 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "addropper.h"
 
+void get_type_and_class(char * data, u16 len, u16 * type, u16 * class) {
+	// go back from end of packet to retrieve class and type
+	*type = get_u16( data + (len-4) );
+	*class = get_u16( data + (len-2) );
+}
+
+u16 build_zero_answer(char ** data, u16 len) {
+	
+	u16 resp_size = len + 16;
+	
+	char * new_data = malloc(resp_size);
+	memcpy(new_data, *data, len);
+	
+	// *data = realloc(*data, len + 16);
+	// char * new_data = *data;
+	
+	new_data[2] = 0x80;			// set first flag byte to 1000 0000 (for response)
+	new_data[3] = 0x00;			// set second flag byte to 0
+	new_data[7] = 0x01;			// contains an Anser RR
+	
+	// memcpy( new_data+12, new_data+len, (new_data+len) - (new_data+12));
+	
+	// u16 pkt_end = len;
+	new_data[len] = 0xc0;	// set pointer
+	new_data[len+1] = 0x0c;	// pointer to QNAME (offset in pkt = 13 byte)
+	
+	// get type and class
+	u16 type;
+	u16 class;
+	get_type_and_class(*data, len, &type, &class);
+	
+	// set type and class
+	new_data[len+2] = type >> 8;
+	new_data[len+3] = type & 0xff;
+	new_data[len+4] = class >> 8;
+	new_data[len+5] = class & 0xff;
+	
+	// set TTL to 65535 seconds = 18 h
+	new_data[len+6] = 0x00;
+	new_data[len+7] = 0x00;
+	new_data[len+8] = 0xff;
+	new_data[len+9] = 0xff;
+	
+	// size of IPv4 address = 4 byte
+	new_data[len+10] = 0x00;
+	new_data[len+11] = 0x04;
+	
+	// IPv4 address = 0.0.0.0
+	new_data[len+12] = 0x00;
+	new_data[len+13] = 0x00;
+	new_data[len+14] = 0x00;
+	new_data[len+15] = 0x00;
+	
+	*data = new_data;
+	
+	return resp_size;
+}
 void parse_dns_rr(dns_packet * pkt, char * data, u16 pos, u16 len) {
 	
 	u8 maxlenofdomain = len - pos - 4;

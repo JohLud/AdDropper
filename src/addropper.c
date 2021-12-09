@@ -17,7 +17,7 @@ int main(int arc, char ** argv) {
 	struct sockaddr_in * sender = malloc(sizeof(struct sockaddr_in));
 	char * buf = malloc(MAX_DNS_SIZE);
 	dns_packet * pkt = malloc(sizeof(dns_packet));
-	u32 len_sender = sizeof(sender);
+	u32 len_sender = sizeof(*sender);
 	
 	// get a DNS server
 	struct sockaddr_in dns_server;
@@ -29,7 +29,7 @@ int main(int arc, char ** argv) {
 	
 	while(1) {
 		
-		unsigned int rsize = recvfrom(fd, buf, 1024, 0, (struct sockaddr *) sender, &len_sender);
+		u32 rsize = recvfrom(fd, buf, 1024, 0, (struct sockaddr *) sender, &len_sender);
 		if (errno != 0) printf("Receiving error: %s\n", strerror(errno));
 		
 		u8 response = parse_dns(pkt, buf, rsize);
@@ -38,6 +38,7 @@ int main(int arc, char ** argv) {
 			u16 tmp_ti = get_u16(buf);
 					
 			if (dns_connections+tmp_ti) {
+				// free
 				forward_dns(fd, (dns_connections+tmp_ti), buf, rsize);
 			}
 			// free resources
@@ -46,8 +47,15 @@ int main(int arc, char ** argv) {
 		// check for ad
 		_Bool is_ad = check_ad_domain(&pkt->domain);
 		printf("Query for %s is Ad: %u\n", pkt->domain, is_ad);
-		if (is_ad) continue;
+		
+		if (is_ad) {
+			// free
+			send_zero_answer(fd, sender, len_sender, buf, rsize);
+			continue;
+		}
+		
 		// forward DNS query
+		// free
 		send_query(fd, dns_connections, sender, len_sender, buf, rsize, &dns_server);		
 	}
 	
@@ -55,7 +63,16 @@ int main(int arc, char ** argv) {
 	return 0;
 }
 
-void send_query(int fd, sender_packet_map * dns_connections, struct sockaddr_in * sender, u32 len_sender, char * buf, unsigned int rsize, struct sockaddr_in * dnsserver) {
+void send_zero_answer(int fd, struct sockaddr_in * sender, u32 len_sender, char * buf, u32 len) {
+	
+	char ** new_buf = &buf;
+	u16 new_len = build_zero_answer(new_buf, len);
+	
+	unsigned int ret_size = sendto(fd, *new_buf, new_len, 0, (struct sockaddr *) sender, len_sender);
+	if (errno != 0) printf("Sending zero answer error: %s\n", strerror(errno));
+}
+
+void send_query(int fd, sender_packet_map * dns_connections, struct sockaddr_in * sender, u32 len_sender, char * buf, u32 rsize, struct sockaddr_in * dnsserver) {
 	
 	u16 trans_id = get_u16(buf);
 	sender_packet_map * entry = malloc(sizeof(sender_packet_map));
@@ -68,12 +85,12 @@ void send_query(int fd, sender_packet_map * dns_connections, struct sockaddr_in 
 	
 	dns_connections[trans_id] = *entry;
 	
-	unsigned int res = sendto(fd, buf, rsize, 0, (const struct sockaddr *) dnsserver, sizeof(*dnsserver));
+	unsigned int res = sendto(fd, buf, rsize, 0, (struct sockaddr *) dnsserver, sizeof(*dnsserver));
 	if (errno != 0) printf("Query sending error: %s\n", strerror(errno));
 }
 
-void forward_dns(int fd, sender_packet_map * mapping, char * data, u16 size) {
-	int ret_size = sendto(fd, data, size, 0, (const struct sockaddr *) mapping->sender, mapping->len_sender);
+void forward_dns(int fd, sender_packet_map * mapping, char * data, u32 size) {
+	int ret_size = sendto(fd, data, size, 0, (struct sockaddr *) mapping->sender, mapping->len_sender);
 	if (errno != 0) printf("Forwarding sending error: %s\n", strerror(errno));
 }
 
@@ -93,7 +110,7 @@ int get_socket() {
 	}
 	
 	int optval = 1;
-	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const void *) &optval, sizeof(int));
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *) &optval, sizeof(int));
 			   
 	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;
